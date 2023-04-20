@@ -46,7 +46,7 @@ def add_text(forum: shemas.Forum):
         API call for adding text
     """
     session = Session(bind=engine, expire_on_commit= False)
-    forumDB = Forum(text = forum.text)
+    forumDB = Forum(text = forum.text, topic_id=forum.topic_id)
     session.add(forumDB)
     session.commit()
     id = forumDB.id
@@ -105,5 +105,22 @@ def get_all_topics():
     session.close()
     #return topics_list
     return [topic.topic for topic in topics_list]
+
+@app.get("/get_all_texts")
+def get_all_texts_2():
+    session = Session(bind=engine, expire_on_commit=False)
+    texts = session.query(Forum).all()
+    session.close()
+    return [{"id": text.id, "text": text.text, "topic_id": text.topic_id} for text in texts]
+
+@app.get("/texts_by_topic/{id}")
+def get_texts_by_topic(id: int):
+    session = Session(bind=engine, expire_on_commit=False)
+    texts = session.query(Forum).filter(Forum.topic_id == id).all()
+    session.close()
+    if not texts:
+        raise HTTPException(status_code=404, detail=f"No texts found for topic with ID {id}")
+    return [text.text for text in texts]
+
 
 #app = VersionedFastAPI(app, version_format="{major}", prefix_format="/v{major}")
